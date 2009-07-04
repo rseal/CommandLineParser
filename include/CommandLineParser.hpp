@@ -30,7 +30,8 @@ using namespace std;
 struct CommandLineParser{
 
     typedef vector<string> StringArray;
-    typedef vector<Option> OptionArray;
+    typedef vector<Switch> SwitchArray;
+    typedef vector<Arg>    ArgArray;
 
     string         programName_;
     vector<string> tokens_;
@@ -40,35 +41,40 @@ struct CommandLineParser{
     vector<int>    argNumInputs_;
     bool parse_;
 
-    const int FindArg(const string& target){
+    //!Finds target and returns index if found
+    template<class T2>
+    const int Find(T2& vec, const string& target){
 	int idx;
-	for(idx=0; idx<argList_.size(); ++idx)
-	    if(target == argList_[idx].Name()) break;
-	if(idx==argList_.size()) idx=string::npos;
+	for(idx=0; idx<vec.size(); ++idx)
+	    if(target == vec[idx].Name()) break;
+	if(idx==vec.size()) idx=string::npos;
 	return idx;
     }
 
-    const int FindSwitch(const string& target){
-	int idx;
-	for(idx=0; idx<switchList_.size(); ++idx)
-	    if(target == switchList_[idx].Name()) break;
-	if(idx==argList_.size()) idx=string::npos;
-	return idx;
+    //!Formatted printing for Help display
+    template<class T>
+    void Print(T& vec){
+	for(int i=0; i<vec.size(); ++i)
+ 	    cout << "      " 
+ 		 << std::left 
+ 		 << std::setw(10) 
+ 		 << "-" + vec[i].Name() 
+ 		 << std::left 
+ 		 << vec[i].Help() 
+ 		 << endl;
     }
 
 public:
 
     CommandLineParser(int argc, char** argv);
     void Parse();
-    void Print();
+    void PrintHelp();
     template<typename T> 
     const T GetArgValue(string const& name, const int& itemNum=0);
     const bool ArgSet(string const& name);
     const bool SwitchSet(string const& name);
 
 //!Direct method for defining a command line argument. 
-//!The user may also create an argument separately and add 
-//!through the alternate AddArg(const Arg& arg) interface.
     void AddArg(string const& name, string const& helpDesc, 
 		int const& numInputs=1, bool const& required=false){
 	argList_.push_back(Arg(name,helpDesc,numInputs,required));
@@ -80,7 +86,6 @@ public:
     }
 
 //!Direct method for defining a command line switch. An alternate method allows a standalone Switch struct to 
-//! be added by reference AddSwitch(const Switch& swtch).
     void AddSwitch(string const& name, string const& helpDesc, bool const& required=false){
 	switchList_.push_back(Switch(name,helpDesc,required));
     }
@@ -115,8 +120,6 @@ CommandLineParser::CommandLineParser(int argc, char** argv): parse_(false){
 	    tStr += " " + str;
     }     
     if(argc > 1) tokens_.push_back(tStr);
-
-//    for(int i=0; i<tokens_.size(); ++i) cout << "token[" << i << "] = " << tokens_[i] << endl;
 }
 
 //!GetArgValue makes use of a template, allowing the user to define the return type. This allows for conversion 
@@ -129,14 +132,14 @@ const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
 
     T value;
 
-    int idx = FindArg(name);
+    int idx = this->Find<ArgArray>(argList_,name);
     try{
 	if(idx == string::npos) throw CLP::NoArg(name);
 	value = boost::lexical_cast<T>(argList_[idx].Value(itemNum));
     }
     catch(CLP::Exception& e){
 	e.PrintError();
-	Print();
+	PrintHelp();
 	exit(1);
     }
 
@@ -162,11 +165,11 @@ void CommandLineParser::Parse(){
 	for(; iter!=tkn.end(); ++iter)
 	    tknVec.push_back(*iter);
 	
- 	idx = FindSwitch(tknVec[0]);
+ 	idx = Find<SwitchArray>(switchList_,tknVec[0]);
  	if(idx != string::npos)
 	    switchList_[idx].Set(true);
 	
-	idx = FindArg(tknVec[0]);
+	idx = Find<ArgArray>(argList_,tknVec[0]);
 	if(idx != string::npos){
 	    tknVec.erase(tknVec.begin());
 	    argList_[idx].Add(tknVec);
@@ -177,35 +180,19 @@ void CommandLineParser::Parse(){
     parse_ = true;
 }
 
-void CommandLineParser::Print(){
+void CommandLineParser::PrintHelp(){
     cout.fill(' ');
     cout << "   Available Arguments:" << endl;
     if(argList_.empty())
 	cout << "      No Arguments available" << endl;
-    else{
- 	for(int i=0; i<argList_.size(); ++i)
- 	    cout << "      " 
- 		 << std::left 
- 		 << std::setw(10) 
- 		 << "-" + argList_[i].Name() 
- 		 << std::left 
- 		 << argList_[i].Help() 
- 		 << endl;
-    }
+    else
+	Print<ArgArray>(argList_);
+    cout << endl;
     cout << "   Available Switches:" << endl;
     if(switchList_.empty())
 	cout << "      No Switchess available" << endl;
-    else{
- 	for(int i=0; i<switchList_.size(); ++i)
- 	    cout << "      " 
- 		 << std::left 
- 		 << std::setw(10) 
- 		 << "-" + switchList_[i].Name() 
- 		 << std::left 
- 		 << switchList_[i].Help() 
- 		 << endl;
-    }
-
+    else
+	Print<SwitchArray>(switchList_);
     cout << endl;
 }
 
@@ -213,9 +200,7 @@ void CommandLineParser::Print(){
 const bool CommandLineParser::SwitchSet(string const& name){
     //run-time assertion
     assert(parse_==true);
-    int idx = FindSwitch(name);
+    int idx = Find<SwitchArray>(switchList_,name);
     return idx == string::npos ? false : switchList_[idx].Set();
 }
-
-
 #endif
