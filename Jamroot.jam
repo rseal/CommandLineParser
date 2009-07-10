@@ -1,0 +1,10 @@
+import notfile ;
+use-project arg : test ;
+build-project test ;
+
+notfile echo_something : @echo ;
+actions echo
+{
+   echo "something"
+}
+

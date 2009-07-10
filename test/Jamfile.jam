@@ -1,0 +1,4 @@
+unit-test arg-test  : arg.cpp ;
+install ../bin : arg-test ;
+
+
