@@ -19,11 +19,8 @@ public:
 
     const string Value(const int& index) {
        bool error = list_.empty() || index > list_.size();
-       string value;
-       if(required_ && error) 
-          throw std::invalid_argument("CLP Exception : Argument " + Name() + " not found ");
-
-       return error ? default_ : list_.at(index);
+       string value = (required_ && error) ? "ERROR" : error ? default_ : list_.at(index);
+       return value; 
     }
 
     void Add(std::vector<string> list) { list_ = list; Set(true);}

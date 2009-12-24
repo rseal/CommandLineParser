@@ -118,7 +118,13 @@ const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
       throw std::invalid_argument("CLP Exception : Arg " + name + " not found");
    }
 
-   return boost::lexical_cast<T>(arg->Value(itemNum));
+   const string value = arg->Value(itemNum);
+   if(value == "ERROR"){
+   PrintHelp();
+   throw std::invalid_argument("CLP Exception : Requesting invalid value from Arg " + name);
+   }
+
+   return boost::lexical_cast<T>(value);
 }
 
 //!This member performs the work of parsing the command line list and storing information relating
