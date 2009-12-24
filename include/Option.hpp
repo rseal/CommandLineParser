@@ -19,5 +19,7 @@ public:
     const bool& Set()           { return set_;      }
     const string& Name()        { return name_;     }
     const string& Help()        { return helpDesc_; }
+
+    const bool operator ==( const string& name) { return name_ == name; }
 };
 #endif

@@ -1,3 +1,4 @@
+//
 ////////////////////////////////////////////////////////////////////////////////
 ///\file CommandLineParser.h
 ///
@@ -14,6 +15,8 @@
 #include <iomanip>
 #include <vector>
 #include <cassert>
+#include <stdexcept>
+#include <algorithm>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
@@ -29,97 +32,87 @@ using namespace std;
 //! provide a complete interface for parsing the command line.
 struct CommandLineParser{
 
-    typedef vector<string> StringArray;
-    typedef vector<Switch> SwitchArray;
-    typedef vector<Arg>    ArgArray;
+   typedef vector<string> StringVec;
+   typedef vector<Switch> SwitchVec;
+   typedef vector<Arg>    ArgVec;
 
-    string         programName_;
-    vector<string> tokens_;
-    vector<Switch> switchList_;
-    vector<Arg>    argList_;
-    vector<string> argHelpList_;
-    vector<int>    argNumInputs_;
-    bool parse_;
+   string         programName_;
+   StringVec tokens_;
+   SwitchVec switchVec_;
+   ArgVec    argList_;
+   StringVec argHelpList_;
+   vector<int>    argNumInputs_;
+   bool parse_;
 
-    //!Finds target and returns index if found
-    template<class T2>
-    const int Find(T2& vec, const string& target){
-	int idx;
-	for(idx=0; idx<vec.size(); ++idx)
-	    if(target == vec[idx].Name()) break;
-	if(idx==vec.size()) idx=string::npos;
-	return idx;
-    }
+   //!Formatted printing for Help display
+   template<class T>
+      void Print(T& vec){
+         for(int i=0; i<vec.size(); ++i)
+            cout << "      " 
+               << std::left 
+               << std::setw(10) 
+               << "-" + vec[i].Name() 
+               << std::left 
+               << vec[i].Help() 
+               << endl;
+      }
 
-    //!Formatted printing for Help display
-    template<class T>
-    void Print(T& vec){
-	for(int i=0; i<vec.size(); ++i)
- 	    cout << "      " 
- 		 << std::left 
- 		 << std::setw(10) 
- 		 << "-" + vec[i].Name() 
- 		 << std::left 
- 		 << vec[i].Help() 
- 		 << endl;
-    }
+   public:
 
-public:
+   CommandLineParser(int argc, char** argv);
+   void Parse();
+   void PrintHelp();
+   template<typename T> 
+      const T GetArgValue(string const& name, const int& itemNum=0);
+   const bool ArgSet(string const& name);
+   const bool SwitchSet(string const& name);
 
-    CommandLineParser(int argc, char** argv);
-    void Parse();
-    void PrintHelp();
-    template<typename T> 
-    const T GetArgValue(string const& name, const int& itemNum=0);
-    const bool ArgSet(string const& name);
-    const bool SwitchSet(string const& name);
+   //!Direct method for defining a command line argument. 
+   void AddArg(string const& name, string const& helpDesc, 
+         int const& numInputs=1, bool const& required=false){
+      argList_.push_back(Arg(name,helpDesc,numInputs,required));
+   }
 
-//!Direct method for defining a command line argument. 
-    void AddArg(string const& name, string const& helpDesc, 
-		int const& numInputs=1, bool const& required=false){
-	argList_.push_back(Arg(name,helpDesc,numInputs,required));
-    }
+   //!Member allowing a standalone Arg structure to be passed to the CommandLineParser structure
+   void AddArg(const Arg& arg){
+      argList_.push_back(arg);
+   }
 
-//!Member allowing a standalone Arg structure to be passed to the CommandLineParser structure
-    void AddArg(const Arg& arg){
-	argList_.push_back(arg);
-    }
+   //!Direct method for defining a command line switch. An alternate method allows a standalone Switch struct to 
+   void AddSwitch(string const& name, string const& helpDesc, bool const& required=false){
+      switchVec_.push_back(Switch(name,helpDesc,required));
+   }
 
-//!Direct method for defining a command line switch. An alternate method allows a standalone Switch struct to 
-    void AddSwitch(string const& name, string const& helpDesc, bool const& required=false){
-	switchList_.push_back(Switch(name,helpDesc,required));
-    }
+   //!Member allowing a standalone Switch structure to be passed to the CommandLineParser by reference.
+   void AddSwitch(const Switch& swtch){
+      switchVec_.push_back(swtch);
+   }
 
-//!Member allowing a standalone Switch structure to be passed to the CommandLineParser by reference.
-    void AddSwitch(const Switch& swtch){
-	switchList_.push_back(swtch);
-    }
+   //!Returns the first argument which is the name of the executed program.
+   string const& ProgramName() { return programName_; }
 
-//!Returns the first argument which is the name of the executed program.
-    string const& ProgramName() { return programName_; }
-    
-    typedef CommandLineParser Clp;
-    enum {ARGS=1, SWITCH=2};
+   typedef CommandLineParser Clp;
+   enum {ARGS=1, SWITCH=2};
 };
 
 //!Constructor accepting c-style argc and argv parameters.
 CommandLineParser::CommandLineParser(int argc, char** argv): parse_(false){
-    string str;
-    string tStr;
-    int index;
-    programName_ = argv[0];
-    
-    for(int i=1; i<argc; ++i){
-	str = argv[i];
-	//look for '-' delimiter and create tokens
-	if(str.find("-") != string::npos){
-	    if(i!=1) tokens_.push_back(tStr);
-	    tStr = str;
-	}
-	else
-	    tStr += " " + str;
-    }     
-    if(argc > 1) tokens_.push_back(tStr);
+   string str;
+   string tStr;
+   int index;
+   programName_ = argv[0];
+
+   for(int i=1; i<argc; ++i){
+      str = argv[i];
+      //look for '-' delimiter and create tokens
+      if(str.find("-") != string::npos){
+         if(i!=1) tokens_.push_back(tStr);
+         tStr = str;
+      }
+      else
+         tStr += " " + str;
+   }     
+   if(argc > 1) tokens_.push_back(tStr);
 }
 
 //!GetArgValue makes use of a template, allowing the user to define the return type. This allows for conversion 
@@ -127,80 +120,74 @@ CommandLineParser::CommandLineParser(int argc, char** argv): parse_(false){
 template<typename T>
 const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
 
-    //run-time assertion
-    assert(parse_==true);
+   if(!parse_)
+      throw std::runtime_error("CLP Exception : User must call Parse() prior to GetArgValue()");
 
-    T value;
+   ArgVec::iterator arg = find(argList_.begin(),argList_.end(),name);
 
-    int idx = this->Find<ArgArray>(argList_,name);
-    try{
-	if(idx == string::npos) throw CLP::NoArg(name);
-	value = boost::lexical_cast<T>(argList_[idx].Value(itemNum));
-    }
-    catch(CLP::Exception& e){
-	e.PrintError();
-	PrintHelp();
-	exit(1);
-    }
+   if(arg == argList_.end()){
+      PrintHelp();
+      throw std::invalid_argument("CLP Exception : Arg " + name + " not found");
+   }
 
-    return value;
-	
+   return boost::lexical_cast<T>(arg->Value(itemNum));
 }
 
 //!This member performs the work of parsing the command line list and storing information relating
 //! to defined switches and arguments
 void CommandLineParser::Parse(){
 
-    typedef boost::tokenizer<boost::char_separator<char> > boostToken;
-    boost::char_separator<char> delimiter("- ");
-    vector<string>::const_iterator inputIter = tokens_.begin();
-    int idx;
+   typedef boost::tokenizer<boost::char_separator<char> > boostToken;
+   boost::char_separator<char> delimiter("- ");
+   StringVec::const_iterator inputIter = tokens_.begin();
 
-    while(inputIter != tokens_.end()){
+   while(inputIter != tokens_.end()){
 
-	vector<string> tknVec;
-	boostToken tkn(*inputIter,delimiter);
-	boostToken::iterator iter=tkn.begin();
+      StringVec tknVec;
+      boostToken tkn(*inputIter,delimiter);
+      boostToken::iterator iter=tkn.begin();
 
-	for(; iter!=tkn.end(); ++iter)
-	    tknVec.push_back(*iter);
-	
- 	idx = Find<SwitchArray>(switchList_,tknVec[0]);
- 	if(idx != string::npos)
-	    switchList_[idx].Set(true);
-	
-	idx = Find<ArgArray>(argList_,tknVec[0]);
-	if(idx != string::npos){
-	    tknVec.erase(tknVec.begin());
-	    argList_[idx].Add(tknVec);
-	}
-	++inputIter;
-    }
+      for(; iter!=tkn.end(); ++iter)
+         tknVec.push_back(*iter);
 
-    parse_ = true;
+      SwitchVec::iterator sw = std::find(switchVec_.begin(), switchVec_.end(), tknVec[0]);
+      if(sw != switchVec_.end()) sw->Set(true);
+
+      ArgVec::iterator arg = std::find(argList_.begin(), argList_.end(), tknVec[0]);
+      if(arg != argList_.end()){
+         tknVec.erase(tknVec.begin());
+         arg->Add(tknVec);
+      }
+
+      ++inputIter;
+   }
+
+   parse_ = true;
 }
 
 void CommandLineParser::PrintHelp(){
-    cout.fill(' ');
-    cout << "   Available Arguments:" << endl;
-    if(argList_.empty())
-	cout << "      No Arguments available" << endl;
-    else
-	Print<ArgArray>(argList_);
-    cout << endl;
-    cout << "   Available Switches:" << endl;
-    if(switchList_.empty())
-	cout << "      No Switchess available" << endl;
-    else
-	Print<SwitchArray>(switchList_);
-    cout << endl;
+   cout.fill(' ');
+   cout << "   Available Arguments:" << endl;
+   if(argList_.empty())
+      cout << "      No Arguments available" << endl;
+   else
+      Print<ArgVec>(argList_);
+   cout << endl;
+   cout << "   Available Switches:" << endl;
+   if(switchVec_.empty())
+      cout << "      No Switchess available" << endl;
+   else
+      Print<SwitchVec>(switchVec_);
+   cout << endl;
 }
 
 //!Returns true if the switch was found in the parsed input.
 const bool CommandLineParser::SwitchSet(string const& name){
-    //run-time assertion
-    assert(parse_==true);
-    int idx = Find<SwitchArray>(switchList_,name);
-    return idx == string::npos ? false : switchList_[idx].Set();
+
+   if(!parse_)
+      throw std::runtime_error("CLP Exception : User must call Parse() prior to GetArgValue()");
+
+   SwitchVec::iterator sw = find(switchVec_.begin(),switchVec_.end(), name);
+   return sw == switchVec_.end() ? false : sw->Set();
 }
 #endif
