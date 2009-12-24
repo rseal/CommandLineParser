@@ -11,9 +11,10 @@ protected:
     string helpDesc_;
     bool required_;
     bool set_;
+    string default_;
 public:
-    Option(const string& name, const string& helpDesc, const bool& required):
-	name_(name), helpDesc_(helpDesc), required_(required), set_(false) {}
+    Option(const string& name, const string& helpDesc, const bool& required, const string& dfault):
+	name_(name), helpDesc_(helpDesc), required_(required), set_(false), default_(dfault) {}
 
     void Set(bool const& state) { set_ = state;     }
     const bool& Set()           { return set_;      }

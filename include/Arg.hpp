@@ -12,15 +12,18 @@ class Arg: public Option{
 
 public:
     Arg(const string& name, const string& helpDesc, const int& numItems, 
-	const bool& required): Option(name,helpDesc,required), 
-			       numItems_(numItems), list_(){}
+	const bool& required, const string& dfault=""):
+        Option(name,helpDesc,required,dfault), numItems_(numItems), list_(){}
 
     const int NumItems() { return numItems_;}
 
     const string Value(const int& index) {
-	if(list_.empty() || (required_ && (index > list_.size())))
-           throw std::invalid_argument("CLP Exception : Argument " + Name() + " not found ");
-	return list_.at(index);
+       bool error = list_.empty() || index > list_.size();
+       string value;
+       if(required_ && error) 
+          throw std::invalid_argument("CLP Exception : Argument " + Name() + " not found ");
+
+       return error ? default_ : list_.at(index);
     }
 
     void Add(std::vector<string> list) { list_ = list; Set(true);}

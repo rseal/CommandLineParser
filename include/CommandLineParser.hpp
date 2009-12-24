@@ -1,4 +1,3 @@
-//
 ////////////////////////////////////////////////////////////////////////////////
 ///\file CommandLineParser.h
 ///
@@ -36,13 +35,13 @@ struct CommandLineParser{
    typedef vector<Switch> SwitchVec;
    typedef vector<Arg>    ArgVec;
 
-   string         programName_;
-   StringVec tokens_;
-   SwitchVec switchVec_;
-   ArgVec    argList_;
-   StringVec argHelpList_;
-   vector<int>    argNumInputs_;
-   bool parse_;
+   string       programName_;
+   StringVec    tokens_;
+   SwitchVec    switchVec_;
+   ArgVec       argList_;
+   StringVec    argHelpList_;
+   vector<int>  argNumInputs_;
+   bool         parse_;
 
    //!Formatted printing for Help display
    template<class T>
@@ -67,20 +66,9 @@ struct CommandLineParser{
    const bool ArgSet(string const& name);
    const bool SwitchSet(string const& name);
 
-   //!Direct method for defining a command line argument. 
-   void AddArg(string const& name, string const& helpDesc, 
-         int const& numInputs=1, bool const& required=false){
-      argList_.push_back(Arg(name,helpDesc,numInputs,required));
-   }
-
    //!Member allowing a standalone Arg structure to be passed to the CommandLineParser structure
    void AddArg(const Arg& arg){
       argList_.push_back(arg);
-   }
-
-   //!Direct method for defining a command line switch. An alternate method allows a standalone Switch struct to 
-   void AddSwitch(string const& name, string const& helpDesc, bool const& required=false){
-      switchVec_.push_back(Switch(name,helpDesc,required));
    }
 
    //!Member allowing a standalone Switch structure to be passed to the CommandLineParser by reference.
