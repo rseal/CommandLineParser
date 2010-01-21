@@ -38,7 +38,7 @@ struct CommandLineParser{
    string       programName_;
    StringVec    tokens_;
    SwitchVec    switchVec_;
-   ArgVec       argList_;
+   ArgVec       argVec_;
    StringVec    argHelpList_;
    vector<int>  argNumInputs_;
    bool         parse_;
@@ -68,7 +68,7 @@ struct CommandLineParser{
 
    //!Member allowing a standalone Arg structure to be passed to the CommandLineParser structure
    void AddArg(const Arg& arg){
-      argList_.push_back(arg);
+      argVec_.push_back(arg);
    }
 
    //!Member allowing a standalone Switch structure to be passed to the CommandLineParser by reference.
@@ -111,9 +111,9 @@ const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
    if(!parse_)
       throw std::runtime_error("CLP Exception : User must call Parse() prior to GetArgValue()");
 
-   ArgVec::iterator arg = find(argList_.begin(),argList_.end(),name);
+   ArgVec::iterator arg = find(argVec_.begin(),argVec_.end(),name);
 
-   if(arg == argList_.end()){
+   if(arg == argVec_.end()){
       PrintHelp();
       throw std::invalid_argument("CLP Exception : Arg " + name + " not found");
    }
@@ -147,8 +147,8 @@ void CommandLineParser::Parse(){
       SwitchVec::iterator sw = std::find(switchVec_.begin(), switchVec_.end(), tknVec[0]);
       if(sw != switchVec_.end()) sw->Set(true);
 
-      ArgVec::iterator arg = std::find(argList_.begin(), argList_.end(), tknVec[0]);
-      if(arg != argList_.end()){
+      ArgVec::iterator arg = std::find(argVec_.begin(), argVec_.end(), tknVec[0]);
+      if(arg != argVec_.end()){
          tknVec.erase(tknVec.begin());
          arg->Add(tknVec);
       }
@@ -162,10 +162,10 @@ void CommandLineParser::Parse(){
 void CommandLineParser::PrintHelp(){
    cout.fill(' ');
    cout << "   Available Arguments:" << endl;
-   if(argList_.empty())
+   if(argVec_.empty())
       cout << "      No Arguments available" << endl;
    else
-      Print<ArgVec>(argList_);
+      Print<ArgVec>(argVec_);
    cout << endl;
    cout << "   Available Switches:" << endl;
    if(switchVec_.empty())
@@ -173,6 +173,13 @@ void CommandLineParser::PrintHelp(){
    else
       Print<SwitchVec>(switchVec_);
    cout << endl;
+}
+
+const bool CommandLineParser::ArgSet(string const& name){
+   if(!parse_) 
+        throw std::runtime_error("CLP Exception: User must call Parse() prior to ArgSet()");
+   ArgVec::iterator arg = find(argVec_.begin(), argVec_.end(), name);
+   return arg == argVec_.end() ? false : arg->Set();
 }
 
 //!Returns true if the switch was found in the parsed input.
