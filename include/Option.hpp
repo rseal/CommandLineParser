@@ -1,3 +1,19 @@
+// Copyright (c) 2010 Ryan Seal <rlseal -at- gmail.com>
+//
+// This file is part of Command Line Parser (CLP) Software.
+//
+// CLP is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//  
+// CLP is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with CLP.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef OPTION_H
 #define OPTION_H
 
@@ -22,5 +38,9 @@ public:
     const string& Help()        { return helpDesc_; }
 
     const bool operator ==( const string& name) { return name_ == name; }
+
+    // if the option is required but not set, return false.
+    // This is intended to be checked after parsing.
+    const bool Valid() { return required_ && !set_ ? false : true; }
 };
 #endif

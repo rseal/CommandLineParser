@@ -1,3 +1,19 @@
+// Copyright (c) 2010 Ryan Seal <rlseal -at- gmail.com>
+//
+// This file is part of Command Line Parser (CLP) Software.
+//
+// CLP is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//  
+// CLP is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with CLP.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////////////
 ///\file CommandLineParser.h
 ///
@@ -44,10 +60,11 @@ struct CommandLineParser{
    bool         parse_;
 
    //!Formatted printing for Help display
-   template<class T>
-      void Print(T& vec){
+   template<class T> void Print(T& vec){
+
          for(int i=0; i<vec.size(); ++i)
-            cout << "      " 
+            cout 
+               << "      " 
                << std::left 
                << std::setw(10) 
                << "-" + vec[i].Name() 
@@ -61,17 +78,20 @@ struct CommandLineParser{
    CommandLineParser(int argc, char** argv);
    void Parse();
    void PrintHelp();
+   void Validate();
    template<typename T> 
       const T GetArgValue(string const& name, const int& itemNum=0);
    const bool ArgSet(string const& name);
    const bool SwitchSet(string const& name);
 
-   //!Member allowing a standalone Arg structure to be passed to the CommandLineParser structure
+   //!Member allowing a standalone Arg structure to be passed to the 
+   //CommandLineParser structure
    void AddArg(const Arg& arg){
       argVec_.push_back(arg);
    }
 
-   //!Member allowing a standalone Switch structure to be passed to the CommandLineParser by reference.
+   //!Member allowing a standalone Switch structure to be passed to the 
+   //CommandLineParser by reference.
    void AddSwitch(const Switch& swtch){
       switchVec_.push_back(swtch);
    }
@@ -103,13 +123,16 @@ CommandLineParser::CommandLineParser(int argc, char** argv): parse_(false){
    if(argc > 1) tokens_.push_back(tStr);
 }
 
-//!GetArgValue makes use of a template, allowing the user to define the return type. This allows for conversion 
-//! from string to any desired type. If the conversion is not possible, an exception will be thrown. 
+//!GetArgValue makes use of a template, allowing the user to define the 
+//return type. This allows for conversion from string to any desired type. 
+//If the conversion is not possible, an exception will be thrown. 
 template<typename T>
 const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
 
    if(!parse_)
-      throw std::runtime_error("CLP Exception : User must call Parse() prior to GetArgValue()");
+      throw std::runtime_error(
+            "CLP Exception : User must call Parse() prior to GetArgValue()"
+            );
 
    ArgVec::iterator arg = find(argVec_.begin(),argVec_.end(),name);
 
@@ -121,14 +144,16 @@ const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
    const string value = arg->Value(itemNum);
    if(value == "ERROR"){
    PrintHelp();
-   throw std::invalid_argument("CLP Exception : Requesting invalid value from Arg " + name);
+   throw std::invalid_argument(
+         "CLP Exception : Requesting invalid value from Arg " + name
+         );
    }
 
    return boost::lexical_cast<T>(value);
 }
 
-//!This member performs the work of parsing the command line list and storing information relating
-//! to defined switches and arguments
+//!This member performs the work of parsing the command line list and 
+//storing information relating to defined switches and arguments
 void CommandLineParser::Parse(){
 
    typedef boost::tokenizer<boost::char_separator<char> > boostToken;
@@ -137,19 +162,29 @@ void CommandLineParser::Parse(){
 
    while(inputIter != tokens_.end()){
 
+      // parse next token 
       StringVec tknVec;
       boostToken tkn(*inputIter,delimiter);
       boostToken::iterator iter=tkn.begin();
 
+      // create vector from token for multi-arg options
       for(; iter!=tkn.end(); ++iter)
          tknVec.push_back(*iter);
 
-      SwitchVec::iterator sw = std::find(switchVec_.begin(), switchVec_.end(), tknVec[0]);
+      // search defined switches for match with command line input
+      SwitchVec::iterator sw = 
+         std::find(switchVec_.begin(), switchVec_.end(), tknVec[0]);
+
       if(sw != switchVec_.end()) sw->Set(true);
 
-      ArgVec::iterator arg = std::find(argVec_.begin(), argVec_.end(), tknVec[0]);
+      // search defined arguments for match with command line input
+      ArgVec::iterator arg = 
+         std::find(argVec_.begin(), argVec_.end(), tknVec[0]);
+
       if(arg != argVec_.end()){
+         // remove argument name from vector
          tknVec.erase(tknVec.begin());
+         // set options by adding list to defined argument
          arg->Add(tknVec);
       }
 
@@ -157,6 +192,41 @@ void CommandLineParser::Parse(){
    }
 
    parse_ = true;
+}
+
+// call this after parsing to ensure that required arguments/switches have
+// been set. This was originally intended to call within Parse() but this 
+// produces a possible error if the user just wants to print the help. Help
+// should be a required, builtin switch to solve this issue in the future.
+void CommandLineParser::Validate(){
+
+   SwitchVec::iterator swIter = switchVec_.begin();
+   while( swIter != switchVec_.end()) {
+
+      if( !swIter->Valid() ) 
+      {
+        PrintHelp();
+         throw std::runtime_error(
+               "CLP Exception: You have not set a required switch " +
+               swIter->Name() + "\n See --help for options."
+               );
+      }
+      ++swIter;
+   }
+
+   ArgVec::iterator argIter = argVec_.begin();
+   while( argIter != argVec_.end()) {
+
+      if( !argIter->Valid() ) 
+      {
+        PrintHelp();
+         throw std::runtime_error(
+               "CLP Exception: You have not set a required argument " + 
+               argIter->Name() + "\n See --help for options."
+               );
+      }
+      ++argIter;
+   }
 }
 
 void CommandLineParser::PrintHelp(){
@@ -177,7 +247,9 @@ void CommandLineParser::PrintHelp(){
 
 const bool CommandLineParser::ArgSet(string const& name){
    if(!parse_) 
-        throw std::runtime_error("CLP Exception: User must call Parse() prior to ArgSet()");
+        throw std::runtime_error(
+              "CLP Exception: User must call Parse() prior to ArgSet()"
+              );
    ArgVec::iterator arg = find(argVec_.begin(), argVec_.end(), name);
    return arg == argVec_.end() ? false : arg->Set();
 }
@@ -186,7 +258,9 @@ const bool CommandLineParser::ArgSet(string const& name){
 const bool CommandLineParser::SwitchSet(string const& name){
 
    if(!parse_)
-      throw std::runtime_error("CLP Exception : User must call Parse() prior to GetArgValue()");
+      throw std::runtime_error(
+            "CLP Exception : User must call Parse() prior to GetArgValue()"
+            );
 
    SwitchVec::iterator sw = find(switchVec_.begin(),switchVec_.end(), name);
    return sw == switchVec_.end() ? false : sw->Set();
