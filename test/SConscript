@@ -1,0 +1,5 @@
+import os
+env = Environment()
+
+build = env.Program( target='arg-test', source='arg.cpp');
+

@@ -1,6 +1,6 @@
 CommandLineParser (CLP)
-Version: 0.99
-Date: June 26, 2010
+Version: 1.0_06-SEP-2010 
+Date: September 06, 2010
 Author: Ryan Seal
 
 Introduction:
@@ -11,14 +11,11 @@ for handling:
 
 1. Help files.
 2. Flags
-3. Arguments with options
+3. Command line arguments with options.
+4. Simple command line switches.
 
-TODO: Go back and revisit this code to see what else it does.
+Usage:
 
-
-Dependencies:
-
-1. Latest version of the boost library.
-
-TODO: Add any other deps here.
+1. Execute "scons install-headers" as root to install the headers.
+2. See the test folder for a simple example. 
 

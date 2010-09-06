@@ -30,12 +30,18 @@ int test_main( int argc , char ** argv )             // note the name!
     argv[3] = (char*)"-r argr";
     argv[4] = (char*)"-a";
 
+
     //create parser and add arguments/switches
     CommandLineParser cmd(argc,argv);
-    cmd.AddArg("x", "x argument does this", 1, true);
-    cmd.AddArg("w", "write to file name", 1, true);
-    cmd.AddArg("r", "read file name", 1, true);
-    cmd.AddSwitch("a", "a switch");
+    Arg argX("x", "x argument does this", 1, true);
+    Arg argW("w", "write to file name", 1, true);
+    Arg argR("r", "read file name", 1, true);
+    Switch switchA("a", "a switch", true);
+
+    cmd.AddArg(argX);
+    cmd.AddArg(argW);
+    cmd.AddArg(argR);
+    cmd.AddSwitch(switchA);
     cmd.Parse();
     
     //tests
