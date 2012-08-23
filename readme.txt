@@ -16,6 +16,6 @@ for handling:
 
 Usage:
 
-1. Execute "scons install-headers" as root to install the headers.
-2. See the test folder for a simple example. 
+1. Execute "waf install_headers" as root to install the headers.
+2. Execute "waf build" to build a test example.
 
