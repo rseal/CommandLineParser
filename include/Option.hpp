@@ -33,14 +33,14 @@ public:
 	name_(name), helpDesc_(helpDesc), required_(required), set_(false), default_(dfault) {}
 
     void Set(bool const& state) { set_ = state;     }
-    const bool& Set()           { return set_;      }
-    const string& Name()        { return name_;     }
-    const string& Help()        { return helpDesc_; }
+    bool& Set()           { return set_;      }
+    string& Name()        { return name_;     }
+    string& Help()        { return helpDesc_; }
 
-    const bool operator ==( const string& name) { return name_ == name; }
+    bool operator ==( const string& name) { return name_ == name; }
 
     // if the option is required but not set, return false.
     // This is intended to be checked after parsing.
-    const bool Valid() { return required_ && !set_ ? false : true; }
+    bool Valid() { return required_ && !set_ ? false : true; }
 };
 #endif

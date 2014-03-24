@@ -37,9 +37,9 @@
 #include <boost/tokenizer.hpp>
 #include <boost/static_assert.hpp>
 
-#include <clp/Arg.hpp>
-#include <clp/Switch.hpp>
-#include <clp/Option.hpp>
+#include <Arg.hpp>
+#include <Switch.hpp>
+#include <Option.hpp>
 
 using namespace std;
 
@@ -62,16 +62,16 @@ struct CommandLineParser{
    //!Formatted printing for Help display
    template<class T> void Print(T& vec){
 
-         for(int i=0; i<vec.size(); ++i)
-            cout 
-               << "      " 
-               << std::left 
-               << std::setw(10) 
-               << "-" + vec[i].Name() 
-               << std::left 
-               << vec[i].Help() 
-               << endl;
-      }
+      for(int i=0; i<vec.size(); ++i)
+         cout 
+            << "      " 
+            << std::left 
+            << std::setw(10) 
+            << "-" + vec[i].Name() 
+            << std::left 
+            << vec[i].Help() 
+            << endl;
+   }
 
    public:
 
@@ -80,9 +80,9 @@ struct CommandLineParser{
    void PrintHelp();
    void Validate();
    template<typename T> 
-      const T GetArgValue(string const& name, const int& itemNum=0);
-   const bool ArgSet(string const& name);
-   const bool SwitchSet(string const& name);
+      T GetArgValue(string const& name, const int& itemNum=0);
+   bool ArgSet(string const& name);
+   bool SwitchSet(string const& name);
 
    //!Member allowing a standalone Arg structure to be passed to the 
    //CommandLineParser structure
@@ -97,7 +97,7 @@ struct CommandLineParser{
    }
 
    //!Returns the first argument which is the name of the executed program.
-   string const& ProgramName() { return programName_; }
+   string & ProgramName() { return programName_; }
 
    typedef CommandLineParser Clp;
    enum {ARGS=1, SWITCH=2};
@@ -107,7 +107,6 @@ struct CommandLineParser{
 CommandLineParser::CommandLineParser(int argc, char** argv): parse_(false){
    string str;
    string tStr;
-   int index;
    programName_ = argv[0];
 
    for(int i=1; i<argc; ++i){
@@ -127,7 +126,7 @@ CommandLineParser::CommandLineParser(int argc, char** argv): parse_(false){
 //return type. This allows for conversion from string to any desired type. 
 //If the conversion is not possible, an exception will be thrown. 
 template<typename T>
-const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
+T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
 
    if(!parse_)
       throw std::runtime_error(
@@ -143,10 +142,10 @@ const T CommandLineParser::GetArgValue(string const& name, const int& itemNum){
 
    const string value = arg->Value(itemNum);
    if(value == "ERROR"){
-   PrintHelp();
-   throw std::invalid_argument(
-         "CLP Exception : Requesting invalid value from Arg " + name
-         );
+      PrintHelp();
+      throw std::invalid_argument(
+            "CLP Exception : Requesting invalid value from Arg " + name
+            );
    }
 
    return boost::lexical_cast<T>(value);
@@ -205,7 +204,7 @@ void CommandLineParser::Validate(){
 
       if( !swIter->Valid() ) 
       {
-        PrintHelp();
+         PrintHelp();
          throw std::runtime_error(
                "CLP Exception: You have not set a required switch " +
                swIter->Name() + "\n See --help for options."
@@ -219,7 +218,7 @@ void CommandLineParser::Validate(){
 
       if( !argIter->Valid() ) 
       {
-        PrintHelp();
+         PrintHelp();
          throw std::runtime_error(
                "CLP Exception: You have not set a required argument " + 
                argIter->Name() + "\n See --help for options."
@@ -245,17 +244,17 @@ void CommandLineParser::PrintHelp(){
    cout << endl;
 }
 
-const bool CommandLineParser::ArgSet(string const& name){
+bool CommandLineParser::ArgSet(string const& name){
    if(!parse_) 
-        throw std::runtime_error(
-              "CLP Exception: User must call Parse() prior to ArgSet()"
-              );
+      throw std::runtime_error(
+            "CLP Exception: User must call Parse() prior to ArgSet()"
+            );
    ArgVec::iterator arg = find(argVec_.begin(), argVec_.end(), name);
    return arg == argVec_.end() ? false : arg->Set();
 }
 
 //!Returns true if the switch was found in the parsed input.
-const bool CommandLineParser::SwitchSet(string const& name){
+bool CommandLineParser::SwitchSet(string const& name){
 
    if(!parse_)
       throw std::runtime_error(
