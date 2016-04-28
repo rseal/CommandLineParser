@@ -14,16 +14,32 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with CLP.  If not, see <http://www.gnu.org/licenses/>.
-#ifndef SWITCH_H
-#define SWITCH_H
+#ifndef ARG_H
+#define ARG_H
 
-#include <Option.hpp>
+#include <clp/Option.hpp>
+#include <iostream>
+#include <vector>
+#include <stdexcept>
 
-//!\brief Provides an interface for defining switches on the command line. 
-class Switch: public Option{
+class Arg: public Option{
+    int numItems_;
+    std::vector<string> list_;
+
 public:
-    Switch(const string& name, const string& helpDesc, const bool& required, 
-    const string& dfault=""):
-	Option(name,helpDesc,required,dfault){};
+    Arg(const string& name, const string& helpDesc, const int& numItems, 
+	const bool& required, const string& dfault=""):
+        Option(name,helpDesc,required,dfault), numItems_(numItems), list_(){}
+
+    int NumItems() { return numItems_;}
+
+    string Value(const unsigned int& index) {
+       bool error = list_.empty() || index > list_.size();
+       string value = (required_ && error) ? "ERROR" : error ? default_ : list_.at(index);
+       return value; 
+    }
+
+    void Add(std::vector<string> list) { list_ = list; Set(true);}
 };
+
 #endif

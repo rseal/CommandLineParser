@@ -37,9 +37,9 @@
 #include <boost/tokenizer.hpp>
 #include <boost/static_assert.hpp>
 
-#include <Arg.hpp>
-#include <Switch.hpp>
-#include <Option.hpp>
+#include <clp/Arg.hpp>
+#include <clp/Switch.hpp>
+#include <clp/Option.hpp>
 
 using namespace std;
 
@@ -62,14 +62,14 @@ struct CommandLineParser{
    //!Formatted printing for Help display
    template<class T> void Print(T& vec){
 
-      for(int i=0; i<vec.size(); ++i)
+      for(unsigned int idx=0; idx<vec.size(); ++idx)
          cout 
             << "      " 
             << std::left 
             << std::setw(10) 
-            << "-" + vec[i].Name() 
+            << "-" + vec[idx].Name() 
             << std::left 
-            << vec[i].Help() 
+            << vec[idx].Help() 
             << endl;
    }
 
@@ -109,17 +109,21 @@ CommandLineParser::CommandLineParser(int argc, char** argv): parse_(false){
    string tStr;
    programName_ = argv[0];
 
-   for(int i=1; i<argc; ++i){
-      str = argv[i];
+   for(int idx=1; idx<argc; ++idx)
+   {
+      str = argv[idx];
       //look for '-' delimiter and create tokens
-      if(str.find("-") != string::npos){
-         if(i!=1) tokens_.push_back(tStr);
+      if(str.find("-") != string::npos)
+      {
+         if(idx!=1) tokens_.push_back(tStr);
          tStr = str;
       }
       else
+      {
          tStr += " " + str;
+      }
    }     
-   if(argc > 1) tokens_.push_back(tStr);
+   if(argc > 1) { tokens_.push_back(tStr); }
 }
 
 //!GetArgValue makes use of a template, allowing the user to define the 
@@ -214,8 +218,8 @@ void CommandLineParser::Validate(){
    }
 
    ArgVec::iterator argIter = argVec_.begin();
-   while( argIter != argVec_.end()) {
-
+   while( argIter != argVec_.end())
+   {
       if( !argIter->Valid() ) 
       {
          PrintHelp();
